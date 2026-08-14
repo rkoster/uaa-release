@@ -13,6 +13,23 @@
 
 set -euo pipefail
 
+require_property() {
+  local name="$1" value="$2"
+  if [[ -z "${value}" ]]; then
+    echo "acceptance-tests errand requires the ${name} property to be set." >&2
+    echo "It is defaulted to empty so this job can be colocated to host the" >&2
+    echo "softkey signing plugin without director credentials." >&2
+    exit 1
+  fi
+}
+
+require_property "bosh.environment"           "<%= p('bosh.environment') %>"
+require_property "bosh.client"                "<%= p('bosh.client') %>"
+require_property "bosh.client_secret"         "<%= p('bosh.client_secret') %>"
+require_property "bosh.ca_cert"               "<%= p('bosh.ca_cert') %>"
+require_property "bosh.deployment"            "<%= p('bosh.deployment') %>"
+require_property "uaa_deployment_manifest_b64" "<%= p('uaa_deployment_manifest_b64') %>"
+
 PKG=/var/vcap/packages/acceptance-tests
 RUN_DIR=/var/vcap/data/acceptance-tests
 mkdir -p "${RUN_DIR}"
