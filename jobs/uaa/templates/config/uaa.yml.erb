@@ -339,6 +339,10 @@
     add_value(jwt, p('uaa.jwt.refresh.unique'), 'token', 'refresh', 'unique')
     add_value(jwt, p('uaa.jwt.refresh.rotate'), 'token', 'refresh', 'rotate')
 
+    # Fixed by contract, shared with any colocated signing plugin. Not
+    # configurable: two independently versioned releases must agree on it.
+    add_value(jwt, '/var/vcap/sys/run/uaa/remote-signer.sock', 'token', 'remote_signer', 'socket')
+
     refresh_token_format = p('uaa.jwt.refresh.format')
     valid_formats = ['opaque', 'jwt']
     if valid_formats.include?(refresh_token_format)

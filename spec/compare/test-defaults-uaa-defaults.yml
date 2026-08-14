@@ -88,6 +88,8 @@ jwt:
       unique: false
       rotate: false
       format: jwt
+    remote_signer:
+      socket: "/var/vcap/sys/run/uaa/remote-signer.sock"
 oauth:
   clients:
     admin:

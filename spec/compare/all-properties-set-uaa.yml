@@ -115,6 +115,8 @@ jwt:
       unique: true
       rotate: true
       format: opaque
+    remote_signer:
+      socket: "/var/vcap/sys/run/uaa/remote-signer.sock"
 cors:
   default:
     allowed:

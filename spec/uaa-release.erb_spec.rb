@@ -1399,6 +1399,13 @@ describe 'uaa-release erb generation' do
         end
       end
 
+      context 'the remote signing plugin socket' do
+        it 'always tells uaa where to find the remote signer socket' do
+          expect(parsed_yaml['jwt']['token']['remote_signer']['socket'])
+            .to eq('/var/vcap/sys/run/uaa/remote-signer.sock')
+        end
+      end
+
     end
   end
 
