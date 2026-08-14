@@ -1,0 +1,26 @@
+# Colocates the acceptance-tests job onto the UAA instance group purely to
+# host a software signing plugin, and switches the active JWT key to one
+# resolved through that plugin.
+#
+# The plugin signs with a key held in process memory. It exists so the
+# remote signing path can be tested without cloud credentials, and must
+# never be used outside a test deployment.
+- type: replace
+  path: /instance_groups/name=uaa/jobs/-
+  value:
+    name: acceptance-tests
+    release: uaa
+    properties:
+      acceptance_tests:
+        enable_softkey_remote_signer_plugin: true
+
+- type: replace
+  path: /instance_groups/name=uaa/jobs/name=uaa/properties/uaa/jwt/policy/active_key_id
+  value: acceptance-test-key
+
+- type: replace
+  path: /instance_groups/name=uaa/jobs/name=uaa/properties/uaa/jwt/policy/keys
+  value:
+    acceptance-test-key:
+      signingKeyRef: acceptance-test-key
+      signingAlg: RS256
