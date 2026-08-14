@@ -6,9 +6,10 @@ set -e -x
 # shared/tasks/uaa-release-acceptance-tests/task.sh -- which assembles a
 # single tarball and `bosh add-blob`s it as "acceptance-tests.tgz". The
 # tarball contains, at its top level:
-#   acceptance_tests.test  (the ginkgo v1 suite, go-test-compiled, static)
-#   bosh                   (the bosh CLI the suite shells out to)
-#   opsfiles/              (the suite's scenario ops files)
+#   acceptance_tests.test    (the ginkgo v1 suite, go-test-compiled, static)
+#   bosh                     (the bosh CLI the suite shells out to)
+#   softkey-remote-signer    (software signing plugin, test use only)
+#   opsfiles/                (the suite's scenario ops files)
 # so on the compilation VM we only have to unpack it -- no Go, no network.
 
 cd "${BOSH_INSTALL_TARGET}"
@@ -21,4 +22,6 @@ fi
 
 tar zxvf "${tgz}" -C "${BOSH_INSTALL_TARGET}"
 
-chmod +x "${BOSH_INSTALL_TARGET}/acceptance_tests.test" "${BOSH_INSTALL_TARGET}/bosh"
+chmod +x "${BOSH_INSTALL_TARGET}/acceptance_tests.test" \
+         "${BOSH_INSTALL_TARGET}/bosh" \
+         "${BOSH_INSTALL_TARGET}/softkey-remote-signer"
