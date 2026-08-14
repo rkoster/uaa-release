@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package uaa.signer.v1;
+
+option java_multiple_files = true;
+option java_package = "org.cloudfoundry.identity.uaa.oauth.signer.v1";
+option go_package = "acceptance_tests/internal/signerpb";
+
+// A signing service backed by a key store that never releases private key
+// material -- typically a cloud KMS or an HSM. Implementations receive a
+// digest and return a signature; they never see the message being signed.
+service SigningService {
+  // Returns the public half of a key, for publishing at /token_keys.
+  rpc GetPublicKey (GetPublicKeyRequest) returns (GetPublicKeyResponse);
+
+  // Signs a pre-computed digest.
+  rpc Sign (SignRequest) returns (SignResponse);
+}
+
+message GetPublicKeyRequest {
+  // Opaque identifier. The implementation maps it to a backend-specific key.
+  string key_ref = 1;
+}
+
+message GetPublicKeyResponse {
+  // DER-encoded SubjectPublicKeyInfo.
+  bytes public_key_der = 1;
+  // JWS algorithm name: RS256, PS256, ES256 or ES384.
+  string algorithm = 2;
+  // Optional DER-encoded X.509 certificate.
+  bytes certificate_der = 3;
+  // Backend-specific key version identifier, for logging and drift detection.
+  string key_version = 4;
+}
+
+message SignRequest {
+  string key_ref = 1;
+  // Hash of the signing input, computed by the caller. Length must match the
+  // hash implied by algorithm: 32 bytes for SHA-256, 48 for SHA-384.
+  bytes digest = 2;
+  // JWS algorithm name; also selects the padding scheme.
+  string algorithm = 3;
+}
+
+message SignResponse {
+  // Signature in JWS wire form, ready to base64url-encode: PKCS#1 v1.5 or PSS
+  // for RSA, and raw R||S concatenation (not DER) for ECDSA.
+  bytes signature = 1;
+  string key_version = 2;
+}
