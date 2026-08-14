@@ -19,6 +19,30 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// kidOf returns the "kid" field from a JWT's header segment.
+func kidOf(token string) string {
+	parts := strings.Split(token, ".")
+	Expect(parts).To(HaveLen(3), "malformed JWT")
+	headerJSON, err := base64.RawURLEncoding.DecodeString(parts[0])
+	Expect(err).NotTo(HaveOccurred(), "failed to base64url-decode JWT header")
+	var header map[string]interface{}
+	Expect(json.Unmarshal(headerJSON, &header)).To(Succeed())
+	kid, ok := header["kid"].(string)
+	Expect(ok).To(BeTrue(), "kid field not found or not a string in JWT header")
+	return kid
+}
+
+// jwkWithKid returns the JWK entry whose "kid" field equals kid, failing the test if not found.
+func jwkWithKid(keys []map[string]interface{}, kid string) map[string]interface{} {
+	for _, k := range keys {
+		if k["kid"] == kid {
+			return k
+		}
+	}
+	Fail(fmt.Sprintf("no JWK with kid=%q found in token_keys response", kid))
+	return map[string]interface{}{} // unreachable; Fail above terminates the test
+}
+
 var _ = Describe("JWT signing through a remote signing plugin", func() {
 	opsFile := "./opsfiles/enable-remote-signing.yml"
 
@@ -70,6 +94,45 @@ var _ = Describe("JWT signing through a remote signing plugin", func() {
 	It("has the remote signer socket file in place", func() {
 		listing := boshSSH("uaa", "ls -l /var/vcap/sys/run/uaa/remote-signer.sock")
 		Expect(listing).To(ContainSubstring("remote-signer.sock"))
+	})
+
+	Context("key rotation", func() {
+		BeforeEach(func() {
+			deployUAAWithOpsFiles("opsfiles/enable-remote-signing.yml",
+				"opsfiles/enable-remote-signing-two-keys.yml")
+		})
+
+		It("publishes a new key before it is used to sign", func() {
+			keys := fetchTokenKeys()
+			kids := []string{}
+			for _, k := range keys {
+				kid, ok := k["kid"].(string)
+				Expect(ok).To(BeTrue(), "JWK entry missing string 'kid' field")
+				kids = append(kids, kid)
+			}
+			Expect(kids).To(ConsistOf("acceptance-test-key", "acceptance-test-key-2"))
+
+			// Still signing with the original key.
+			Expect(kidOf(obtainClientCredentialsToken())).To(Equal("acceptance-test-key"))
+		})
+
+		It("signs with the new key once it is made active, and old tokens still verify", func() {
+			oldToken := obtainClientCredentialsToken()
+
+			deployUAAWithOpsFiles(
+				"opsfiles/enable-remote-signing.yml",
+				"opsfiles/enable-remote-signing-two-keys.yml",
+				"opsfiles/activate-second-key.yml")
+
+			newToken := obtainClientCredentialsToken()
+			Expect(kidOf(newToken)).To(Equal("acceptance-test-key-2"))
+
+			// The previous key must remain published, or tokens issued before
+			// the switch become unverifiable.
+			allKeys := fetchTokenKeys()
+			Expect(allKeys).To(HaveLen(2))
+			Expect(verifyTokenAgainstJWK(oldToken, jwkWithKid(allKeys, "acceptance-test-key"))).To(Succeed())
+		})
 	})
 })
 

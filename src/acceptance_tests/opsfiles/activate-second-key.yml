@@ -1,0 +1,3 @@
+- type: replace
+  path: /instance_groups/name=uaa/jobs/name=uaa/properties/uaa/jwt/policy/active_key_id
+  value: acceptance-test-key-2

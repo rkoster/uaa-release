@@ -10,6 +10,8 @@ processes:
   - /var/vcap/sys/run/uaa/remote-signer.sock
   - --key-ref
   - acceptance-test-key
+  - --key-ref
+  - acceptance-test-key-2
   - --i-understand-this-is-not-secure
   additional_volumes:
   - path: /var/vcap/sys/run/uaa

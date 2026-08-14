@@ -1,0 +1,12 @@
+# Publishes a second key alongside the first without switching to it.
+# This is step one of a rotation: consumers must be able to fetch the new
+# public key before any token is signed with it.
+- type: replace
+  path: /instance_groups/name=uaa/jobs/name=uaa/properties/uaa/jwt/policy/keys
+  value:
+    acceptance-test-key:
+      signingKeyRef: acceptance-test-key
+      signingAlg: RS256
+    acceptance-test-key-2:
+      signingKeyRef: acceptance-test-key-2
+      signingAlg: RS256
