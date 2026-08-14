@@ -2,6 +2,7 @@ require 'rspec'
 require 'bosh/template/test'
 require 'base64'
 require 'tmpdir'
+require 'yaml'
 
 describe 'acceptance-tests job' do
   let(:release_path) { File.join(File.dirname(__FILE__), '..') }
@@ -62,6 +63,63 @@ describe 'acceptance-tests job' do
       # that none of the require_property guards fired for the
       # properties we supplied.
       expect(output).not_to include('property to be set')
+    end
+  end
+
+  describe 'config/bpm.yml' do
+    let(:template) { job.template('config/bpm.yml') }
+
+    it 'declares no processes by default' do
+      expect(YAML.safe_load(template.render({}))['processes']).to eq([])
+    end
+
+    it 'declares the softkey plugin and its volume when enabled' do
+      # Explicit braces (not a bare trailing hash): on this Ruby/bosh-template
+      # gem combination, a bare `render('acceptance_tests' => {...})` is
+      # parsed as keyword arguments against Template#render's `spec:`/
+      # `consumes:` keyword params and raises ArgumentError. The braces force
+      # it to be treated as the single positional properties-hash argument.
+      rendered = YAML.safe_load(template.render(
+        { 'acceptance_tests' => { 'enable_softkey_remote_signer_plugin' => true } }
+      ))
+      process = rendered['processes'].first
+
+      expect(process['name']).to eq('softkey-remote-signer')
+      expect(process['additional_volumes']).to include(
+        'path' => '/var/vcap/sys/run/uaa', 'writable' => true
+      )
+      expect(process['args']).to include('/var/vcap/sys/run/uaa/remote-signer.sock')
+    end
+  end
+
+  describe 'monit' do
+    # monit is deliberately not registered under the job spec's `templates:`
+    # block (BOSH renders it automatically from the job root), so it can't
+    # be looked up via job.template like the other templates in this file --
+    # Bosh::Template::Test::Job#template only resolves paths registered
+    # there. Build the Template directly against the job's spec/monit files
+    # instead.
+    let(:job_spec_hash) { YAML.safe_load(File.read(File.join(release_path, 'jobs/acceptance-tests/spec'))) }
+    let(:template) do
+      Bosh::Template::Test::Template.new(
+        job_spec_hash,
+        File.join(release_path, 'jobs/acceptance-tests/monit')
+      )
+    end
+
+    it 'supervises nothing by default' do
+      expect(template.render({}).strip).to eq('')
+    end
+
+    it 'supervises the softkey plugin when enabled' do
+      # See the comment on the equivalent config/bpm.yml test above: the
+      # explicit braces are required on this Ruby/bosh-template gem
+      # combination, not a stylistic choice.
+      rendered = template.render(
+        { 'acceptance_tests' => { 'enable_softkey_remote_signer_plugin' => true } }
+      )
+      expect(rendered).to include('check process softkey-remote-signer')
+      expect(rendered).to include('bpm start acceptance-tests -p softkey-remote-signer')
     end
   end
 end

@@ -1,0 +1,7 @@
+<%- if p('acceptance_tests.enable_softkey_remote_signer_plugin') -%>
+check process softkey-remote-signer
+  with pidfile /var/vcap/sys/run/bpm/acceptance-tests/softkey-remote-signer.pid
+  start program "/var/vcap/jobs/bpm/bin/bpm start acceptance-tests -p softkey-remote-signer"
+  stop program "/var/vcap/jobs/bpm/bin/bpm stop acceptance-tests -p softkey-remote-signer"
+  group vcap
+<%- end -%>

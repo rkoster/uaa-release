@@ -1,0 +1,19 @@
+<%- # Must stay default-off (see the property's description in this job's
+    # spec): it signs with a key held in process memory, which is what
+    # remote signing exists to avoid. Test use only. -%>
+<%- if p('acceptance_tests.enable_softkey_remote_signer_plugin') -%>
+processes:
+- name: softkey-remote-signer
+  executable: /var/vcap/packages/acceptance-tests/softkey-remote-signer
+  args:
+  - --socket
+  - /var/vcap/sys/run/uaa/remote-signer.sock
+  - --key-ref
+  - acceptance-test-key
+  - --i-understand-this-is-not-secure
+  additional_volumes:
+  - path: /var/vcap/sys/run/uaa
+    writable: true
+<%- else -%>
+processes: []
+<%- end -%>
