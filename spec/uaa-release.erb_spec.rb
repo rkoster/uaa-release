@@ -1359,6 +1359,45 @@ describe 'uaa-release erb generation' do
           }.to raise_error(ArgumentError, /active_key_id missing signingKey/)
         end
       end
+      context 'active key is held in an external key store' do
+        it 'does not complain about a missing signing key' do
+          generated_cf_manifest['properties']['uaa']['jwt'].delete('signing_key')
+          generated_cf_manifest['properties']['uaa']['jwt']['policy']['keys']['key-1'].delete('signingKey')
+          generated_cf_manifest['properties']['uaa']['jwt']['policy']['keys']['key-1']['signingKeyRef'] = 'uaa-jwt-key-1'
+          expect {
+            parsed_yaml
+          }.not_to raise_error
+        end
+
+        it 'passes the key reference through to the rendered token policy' do
+          generated_cf_manifest['properties']['uaa']['jwt'].delete('signing_key')
+          generated_cf_manifest['properties']['uaa']['jwt']['policy']['keys']['key-1'].delete('signingKey')
+          generated_cf_manifest['properties']['uaa']['jwt']['policy']['keys']['key-1']['signingKeyRef'] = 'uaa-jwt-key-1'
+          keys = parsed_yaml['jwt']['token']['policy']['keys']
+          expect(keys['key-1']['signingKeyRef']).to eq('uaa-jwt-key-1')
+          expect(keys['key-1']).not_to have_key('signingKey')
+        end
+      end
+      context 'the active key sets both a signing key and a key reference' do
+        it 'throws an error naming the offending key' do
+          generated_cf_manifest['properties']['uaa']['jwt'].delete('signing_key')
+          generated_cf_manifest['properties']['uaa']['jwt']['policy']['keys']['key-1']['signingKeyRef'] = 'uaa-jwt-key-1'
+          expect {
+            parsed_yaml
+          }.to raise_error(ArgumentError, /uaa\.jwt\.policy\.keys\.key-1.*both signingKey and signingKeyRef/)
+        end
+      end
+      context 'a non-active key sets both a signing key and a key reference' do
+        it 'throws an error naming the offending key' do
+          generated_cf_manifest['properties']['uaa']['jwt']['policy']['keys']['key-2'] = {
+            'signingKey' => generated_cf_manifest['properties']['uaa']['jwt']['policy']['keys']['key-1']['signingKey'],
+            'signingKeyRef' => 'uaa-jwt-key-2'
+          }
+          expect {
+            parsed_yaml
+          }.to raise_error(ArgumentError, /uaa\.jwt\.policy\.keys\.key-2.*both signingKey and signingKeyRef/)
+        end
+      end
 
     end
   end

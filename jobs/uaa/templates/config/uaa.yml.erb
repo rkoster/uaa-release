@@ -611,10 +611,29 @@
        activeKeyId = params['jwt']['token']['policy']['activeKeyId']
        if is_missing params, 'jwt', 'token', 'policy', 'keys', activeKeyId
          message = message + '\nMissing property: uaa.jwt.policy.active_key_id mismatch'
-       elsif is_missing params, 'jwt', 'token', 'policy', 'keys', activeKeyId, 'signingKey'
+       else
+         has_inline_key = !(is_missing params, 'jwt', 'token', 'policy', 'keys', activeKeyId, 'signingKey')
+         has_key_ref = !(is_missing params, 'jwt', 'token', 'policy', 'keys', activeKeyId, 'signingKeyRef')
+         if !has_inline_key && !has_key_ref
            message = message + '\nMissing property: uaa.jwt.policy.active_key_id missing signingKey'
+         end
        end
      end
+  end
+
+  # A jwt policy key may carry an inline signingKey or point at a key held
+  # in an external key store via signingKeyRef, but not both. Checked for
+  # every key here, not just the active one (the active-key presence check
+  # above only covers the active key), so a typo in a key that is about to
+  # be rotated to is caught at deploy rather than at rotation.
+  unless is_missing params, 'jwt', 'token', 'policy', 'keys'
+    params['jwt']['token']['policy']['keys'].each do |kid, key|
+      next unless key.is_a?(Hash)
+      if key.key?('signingKey') && key.key?('signingKeyRef')
+        message = message + '\nInvalid property: uaa.jwt.policy.keys.' + kid +
+                  ' sets both signingKey and signingKeyRef; set one, not both'
+      end
+    end
   end
 
   protocol = p('login.protocol')
