@@ -1328,7 +1328,7 @@ describe 'uaa-release erb generation' do
       context 'active JWT key ID does not match do' do
         it 'throws an error' do
           generated_cf_manifest['properties']['uaa']['jwt'].delete('signing_key')
-          generated_cf_manifest['properties']['uaa']['jwt']['policy']['active_key_id'] = 'key-2'
+          generated_cf_manifest['properties']['uaa']['jwt']['policy']['active_key_id'] = 'key-not-in-map'
           expect {
             parsed_yaml
           }.to raise_error(ArgumentError, /active_key_id mismatch/)

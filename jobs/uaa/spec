@@ -697,7 +697,14 @@ properties:
     description: "The ID of the JWT signing key to be used when signing tokens."
     example: "key-1"
   uaa.jwt.policy.keys:
-    description: "Map of key IDs and signing keys, each defined with a property `signingKey`."
+    description: |
+      Map of key IDs to signing keys. Each key defines exactly one of:
+        signingKey    - the private key in PEM form, held by UAA itself
+        signingKeyRef - the name of a key held in an external key store,
+                        resolved by a signing plugin colocated with UAA.
+                        The private key is never present on this VM.
+      Setting both on the same key is an error. Optional per-key properties
+      signingAlg and signingCert apply to either form.
     example:
       key-1:
         signingKey: |
@@ -716,6 +723,9 @@ properties:
           oYaZoYWi6DzbQQUaIsKxAkEA2rXQjQFsfnSm+w/9067ChWg46p4lq5Na2NpcpFgH
           waZKhM1W0oB8MX78M+0fG3xGUtywTx0D4N7pr1Tk2GTgNw==
           -----END RSA PRIVATE KEY-----
+      key-2:
+        signingKeyRef: uaa-jwt-key-2
+        signingAlg: ES256
   uaa.jwt.signing_key:
     description: "Deprecated. Use uaa.jwt.policy.keys. The key used to sign the JWT-based OAuth2 tokens."
   uaa.jwt.verification_key:
