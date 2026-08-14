@@ -2,6 +2,8 @@
 
 See [docs](https://github.com/cloudfoundry/uaa-release/blob/develop/docs/uaa.md) taken from bosh-micro-cli circa mid-2015.
 
+For operator documentation on delegating JWT signing to a colocated plugin (so that signing private keys never exist on the VM in plaintext), see [docs/remote-signing.md](docs/remote-signing.md).
+
 ## Configuring required properties for UAA start-up
 
 The properties below need to be generated explicitly per deployment of UAA release and are required for proper start-up and functioning of UAA. These are standard artifacts which can be generated using openssl. Please refer the topic below on how to generate a self signed cert.
