@@ -9,5 +9,16 @@ processes:
     CATALINA_OPTS: "<%= p('uaa.catalina_opts') %>"
   args: []
   ephemeral_disk: true
+  additional_volumes:
+  # Shared with a colocated signing plugin, which binds
+  # /var/vcap/sys/run/uaa/remote-signer.sock in this directory. BPM already
+  # creates the directory for this job but does not mount it into the
+  # container, so it must be declared explicitly. Writable to connect to a
+  # socket in this directory, matching BPM's own documented pattern for a
+  # shared sockets volume (see bpm-release/docs/config.md's example, which
+  # uses writable: true on both the socket-serving and socket-consuming
+  # process).
+  - path: /var/vcap/sys/run/uaa
+    writable: true
   limits:
     open_files: 65536
