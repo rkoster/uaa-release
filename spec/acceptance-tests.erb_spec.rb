@@ -64,6 +64,23 @@ describe 'acceptance-tests job' do
       # properties we supplied.
       expect(output).not_to include('property to be set')
     end
+
+    it 'does not set BOSH_ALL_PROXY when bosh.all_proxy is not set' do
+      rendered = template.render(all_required_properties)
+      expect(rendered).not_to include('BOSH_ALL_PROXY')
+    end
+
+    it 'sets BOSH_ALL_PROXY when bosh.all_proxy is provided' do
+      props = all_required_properties.merge(
+        'bosh' => all_required_properties['bosh'].merge(
+          'all_proxy' => 'ssh+socks5://jumpbox@10.0.0.1:22',
+          'jumpbox_private_key' => "-----BEGIN RSA PRIVATE KEY-----\nfake\n-----END RSA PRIVATE KEY-----"
+        )
+      )
+      rendered = template.render(props)
+      expect(rendered).to include('BOSH_ALL_PROXY')
+      expect(rendered).to include('ssh+socks5://jumpbox@10.0.0.1:22')
+    end
   end
 
   describe 'config/bpm.yml' do

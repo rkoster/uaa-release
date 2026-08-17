@@ -36,8 +36,7 @@ properties:
     description: "Name of the UAA deployment the suite deploys/targets. Exported as BOSH_DEPLOYMENT; the suite has no hardcoded deployment name. Defaulted to empty so this job can be colocated purely to host the softkey signing plugin, without placing director credentials on the UAA VM. Validated by bin/run when the errand actually runs."
     default: ""
   bosh.all_proxy:
-    description: "Jumpbox SOCKS5 endpoint (ssh+socks5://jumpbox@host:port, no private-key query). The director's :25555 is firewalled to the jumpbox, so the suite reaches it via this proxy. run.erb appends ?private-key=<file> after materialising the key. Defaulted to empty so this job can be colocated purely to host the softkey signing plugin, without placing director credentials on the UAA VM. Optional: not validated at invocation, since reaching the director through a jumpbox may not apply in every environment this errand runs in."
-    default: ""
+    description: "Jumpbox SOCKS5 endpoint (ssh+socks5://jumpbox@host:port, no private-key query). The director's :25555 is firewalled to the jumpbox, so the suite reaches it via this proxy. run.erb appends ?private-key=<file> after materialising the key. Optional: omit when the BOSH director is directly reachable (no jumpbox). When absent, the BOSH_ALL_PROXY block in run.erb is skipped entirely."
   bosh.jumpbox_private_key:
     description: "PEM contents of the jumpbox SSH private key. Materialised to a file referenced by BOSH_ALL_PROXY. Defaulted to empty so this job can be colocated purely to host the softkey signing plugin, without placing director credentials on the UAA VM. Optional: not validated at invocation, since reaching the director through a jumpbox may not apply in every environment this errand runs in."
     default: ""

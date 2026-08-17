@@ -61,7 +61,8 @@ export BOSH_DIRECTOR_IP="${director_host%%:*}"
 
 # The director's :25555 is firewalled to the jumpbox, so even from this
 # on-network VM we must reach it through the jumpbox SOCKS5 proxy.
-# Materialise the jumpbox key and point BOSH_ALL_PROXY at it. Quoted
+<%- if_p('bosh.all_proxy') do |all_proxy| -%>
+# Materialise the jumpbox key and point the proxy at it. Quoted
 # heredoc: ERB has already substituted the key; the quotes keep the
 # shell from mangling it.
 JUMPBOX_KEY_FILE="${RUN_DIR}/jumpbox.key"
@@ -69,7 +70,8 @@ cat > "${JUMPBOX_KEY_FILE}" <<'EOF_JUMPBOX_KEY'
 <%= p('bosh.jumpbox_private_key') %>
 EOF_JUMPBOX_KEY
 chmod 600 "${JUMPBOX_KEY_FILE}"
-export BOSH_ALL_PROXY="<%= p('bosh.all_proxy') %>?private-key=${JUMPBOX_KEY_FILE}"
+export BOSH_ALL_PROXY="<%= all_proxy %>?private-key=${JUMPBOX_KEY_FILE}"
+<%- end -%>
 
 # The suite (re)deploys from this exact path per scenario. The manifest
 # is delivered base64-encoded so BOSH never sees its inner ((vars)) when
